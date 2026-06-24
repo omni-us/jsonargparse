@@ -183,17 +183,16 @@ class _ActionPrintConfig(NonParsingAction):
         valid_flags = {"": None, "skip_default": "skip_default", "skip_unset": "skip_unset"} | deprecated_valid_flags
         if ruamel_support:
             valid_flags["comments"] = "with_comments"
-        if value is not None:
-            flags = value[0].split(",")
-            invalid_flags = [f for f in flags if f not in valid_flags]
-            if len(invalid_flags) > 0:
-                raise argument_error(f'Invalid option "{invalid_flags[0]}" for {option_string}')
-            for flag in [f for f in flags if f != ""]:
-                mapped = valid_flags[flag]
-                if deprecated_skip_null(flag):
-                    kwargs["skip_unset"] = True
-                else:
-                    kwargs[mapped] = True
+        flags = value[0].split(",")
+        invalid_flags = [f for f in flags if f not in valid_flags]
+        if len(invalid_flags) > 0:
+            raise argument_error(f'Invalid option "{invalid_flags[0]}" for {option_string}')
+        for flag in [f for f in flags if f != ""]:
+            mapped = valid_flags[flag]
+            if deprecated_skip_null(flag):
+                kwargs["skip_unset"] = True
+            else:
+                kwargs[mapped] = True
         while hasattr(parser, "parent_parser"):
             kwargs["key"] = parser.subcommand if kwargs["key"] is None else parser.subcommand + "." + kwargs["key"]
             parser = parser.parent_parser
