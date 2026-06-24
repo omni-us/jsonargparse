@@ -285,7 +285,7 @@ def function_nested_partial_forward_ref(
     p1: List[List["DefinedClass"]],
     p2: "Undefined",  # type: ignore[name-defined]  # noqa: F821
 ):
-    pass
+    pass  # pragma: no cover
 
 
 def test_nested_partial_forward_ref(parser):
