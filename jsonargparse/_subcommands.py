@@ -11,6 +11,7 @@ from ._common import parsing_defaults, single_subcommand
 from ._deprecated import deprecated_implicit_subcommand
 from ._namespace import Namespace, NSKeyError, split_key, split_key_root
 from ._type_checking import ActionsContainer, ArgumentParser
+from ._util import merge_config
 
 __all__ = ["ActionSubCommands"]
 
@@ -267,7 +268,7 @@ def handle_subcommands(
 
         # Update all subcommand settings
         if subnamespace is not None:
-            cfg[key] = subparser.merge_config(cfg.get(key, Namespace()), subnamespace)
+            cfg[key] = merge_config(subparser, cfg.get(key, Namespace()), subnamespace)
 
         # Handle inner subcommands
         if subparser._subparsers is not None:

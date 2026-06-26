@@ -17,11 +17,22 @@ from jsonargparse._util import (
     CaptureParserException,
     get_import_path,
     import_object,
+    merge_config,
     object_path_serializer,
     register_unresolvable_import_paths,
     unique,
 )
 from jsonargparse_tests.conftest import capture_logs
+
+
+def test_merge_config(parser):
+    for key in [1, 2, 3]:
+        parser.add_argument(f"--op{key}", type=int)
+    cfg_from = Namespace(op1=1, op2=None)
+    cfg_to = Namespace(op1=None, op2=2, op3=3)
+    cfg = merge_config(parser, cfg_from, cfg_to)
+    assert cfg == Namespace(op1=1, op2=None, op3=3)
+
 
 # logger property tests
 
@@ -130,7 +141,7 @@ def test_import_object_invalid():
 
 def test_get_import_path():
     assert get_import_path(ArgumentParser) == "jsonargparse.ArgumentParser"
-    assert get_import_path(ArgumentParser.merge_config) == "jsonargparse.ArgumentParser.merge_config"
+    assert get_import_path(ArgumentParser.parse_args) == "jsonargparse.ArgumentParser.parse_args"
     from email.mime.base import MIMEBase
 
     assert get_import_path(MIMEBase) == "email.mime.base.MIMEBase"

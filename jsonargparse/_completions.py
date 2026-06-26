@@ -24,7 +24,7 @@ from ._typehints import (
     is_subclass,
     type_to_str,
 )
-from ._util import NoneType, Path, import_object, unique
+from ._util import NoneType, Path, import_object, merge_config, unique
 
 
 def handle_completions(parser):
@@ -80,7 +80,7 @@ def patch_argcomplete_support():
 
 def get_argcomplete_namespace(parser, namespace):
     namespace.__class__ = __import__("jsonargparse").Namespace
-    return parser.merge_config(parser.get_defaults(skip_validation=True), namespace).as_flat()
+    return merge_config(parser, parser.get_defaults(skip_validation=True), namespace).as_flat()
 
 
 def get_files_completer():

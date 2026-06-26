@@ -94,6 +94,7 @@ from ._util import (
     get_private_kwargs,
     identity,
     load_config_path_context,
+    merge_config,
     return_parser_if_captured,
 )
 
@@ -409,7 +410,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                 environ = os.environ
             with parser_context(load_value_mode=self.parser_mode):
                 cfg_env = self._load_env_vars(env=environ, defaults=defaults)
-            cfg = self.merge_config(cfg_env, cfg)
+            cfg = merge_config(self, cfg_env, cfg)
 
         return cfg
 
@@ -457,13 +458,13 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             if namespace:
                 if namespace_as_config:
                     cfg = self._parse_defaults_and_environ(defaults, env=False)
-                    cfg = self.merge_config(namespace, cfg)
+                    cfg = merge_config(self, namespace, cfg)
                     if env or (env is None and self._default_env):
                         with parser_context(load_value_mode=self.parser_mode):
                             cfg_env = self._load_env_vars(env=os.environ, defaults=defaults)
-                        cfg = self.merge_config(cfg_env, cfg)
+                        cfg = merge_config(self, cfg_env, cfg)
                 else:
-                    cfg = self.merge_config(namespace, cfg)
+                    cfg = merge_config(self, namespace, cfg)
 
             with parse_kwargs_context({"env": env, "defaults": defaults}):
                 cfg, unk = self._parse_known_args_internal(args=args, namespace=cfg)
@@ -510,11 +511,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         try:
             cfg = self._parse_defaults_and_environ(defaults, env)
             if cfg_base:
-                cfg = self.merge_config(cfg_base, cfg)
+                cfg = merge_config(self, cfg_base, cfg)
 
             cfg = self._apply_actions(cfg)
             cfg_apply = self._apply_actions(cfg_obj, prev_cfg=cfg)
-            cfg = self.merge_config(cfg_apply, cfg)
+            cfg = merge_config(self, cfg_apply, cfg)
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
@@ -681,7 +682,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
             if defaults or env:
                 cfg_base = self._parse_defaults_and_environ(defaults, env)
-                cfg = self.merge_config(cfg, cfg_base)
+                cfg = merge_config(self, cfg, cfg_base)
 
             parsed_cfg = self._parse_common(
                 cfg=cfg,
@@ -1059,7 +1060,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                 if not default_config_file_content.strip():
                     continue
                 cfg_file = self._load_config_parser_mode(default_config_file_content, prev_cfg=cfg)
-                cfg = self.merge_config(cfg_file, cfg)
+                cfg = merge_config(self, cfg_file, cfg)
                 try:
                     with _ActionPrintConfig.skip_print_config():
                         cfg = self._parse_common(
@@ -1366,23 +1367,6 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                 prev_cfg[action_dest] = value
             cfg[action_dest] = value
         return cfg[parent_key] if parent_key else cfg
-
-    def merge_config(self, cfg_from: Namespace, cfg_to: Namespace) -> Namespace:
-        """Merges the first configuration into the second configuration.
-
-        Args:
-            cfg_from: The configuration from which to merge.
-            cfg_to: The configuration into which to merge.
-
-        Returns:
-            A new object with the merged configuration.
-        """
-        cfg_from = cfg_from.clone()
-        cfg_to = cfg_to.clone()
-        with parser_context(parent_parser=self):
-            ActionTypeHint.discard_init_args_on_class_path_change(self, cfg_to, cfg_from)
-        cfg_to.update(cfg_from)
-        return cfg_to
 
     def _check_value_key(
         self, action: argparse.Action, value: Any, key: str, cfg: Namespace | None, append: bool = False

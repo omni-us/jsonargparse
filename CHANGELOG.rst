@@ -51,6 +51,9 @@ Deprecated
 - Implicit selection of subcommand when multiple subcommand settings available
   is deprecated and will be removed in v5.0.0. Provide an explicit subcommand
   instead (`#923 <https://github.com/omni-us/jsonargparse/pull/923>`__).
+- ``ArgumentParser.merge_config`` is deprecated and will be removed in v5.0.0.
+  There is no replacement since it is considered internal (`#925
+  <https://github.com/omni-us/jsonargparse/pull/925>`__).
 
 
 v4.49.0 (2026-05-15)

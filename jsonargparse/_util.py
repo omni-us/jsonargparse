@@ -23,6 +23,7 @@ from ._common import (
     parser_context,
 )
 from ._loaders_dumpers import json_compact_dump, load_value
+from ._namespace import Namespace
 from ._optionals import _get_config_read_mode
 from ._paths import Path
 from ._type_checking import ArgumentParser
@@ -45,6 +46,27 @@ def argument_error(message: str, default_config_file: str | None = None) -> Argu
     if default_config_file:
         ex.default_config_file = default_config_file  # type: ignore[attr-defined]
     return ex
+
+
+def merge_config(parser, source: Namespace, target: Namespace) -> Namespace:
+    """Merges the first configuration into the second configuration.
+
+    Args:
+        parser: The parser object.
+        source: The configuration from which to merge.
+        target: The configuration into which to merge.
+
+    Returns:
+        A new object with the merged configuration.
+    """
+    from ._typehints import ActionTypeHint
+
+    source = source.clone()
+    target = target.clone()
+    with parser_context(parent_parser=parser):
+        ActionTypeHint.discard_init_args_on_class_path_change(parser, target, source)
+    target.update(source)
+    return target
 
 
 def _config_path_id(cfg_path: Path) -> tuple[str, str]:

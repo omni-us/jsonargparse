@@ -1238,3 +1238,18 @@ def test_subcommands_implicit_in_default_config_files(parser, tmp_cwd):
     assert cfg.sub == "sub1"
     assert cfg.sub1 == Namespace(sub1val=2)
     assert "sub2" not in cfg
+
+
+def test_deprecated_merge_config(parser):
+    for key in [1, 2, 3]:
+        parser.add_argument(f"--op{key}", type=int)
+    cfg_from = Namespace(op1=1, op2=None)
+    cfg_to = Namespace(op1=None, op2=2, op3=3)
+    with catch_warnings(record=True) as w:
+        cfg = parser.merge_config(cfg_from, cfg_to)
+    assert cfg == Namespace(op1=1, op2=None, op3=3)
+    assert_deprecation_warn(
+        w,
+        message="``ArgumentParser.merge_config`` was deprecated",
+        code="cfg = parser.merge_config(cfg_from, cfg_to)",
+    )
