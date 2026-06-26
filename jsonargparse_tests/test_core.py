@@ -1158,15 +1158,6 @@ def test_validate_branch(example_parser):
     ctx.match("Expected a <class 'int'>")
 
 
-def test_merge_config(parser):
-    for key in [1, 2, 3]:
-        parser.add_argument(f"--op{key}", type=int)
-    cfg_from = Namespace(op1=1, op2=None)
-    cfg_to = Namespace(op1=None, op2=2, op3=3)
-    cfg = parser.merge_config(cfg_from, cfg_to)
-    assert cfg == Namespace(op1=1, op2=None, op3=3)
-
-
 def test_strip_unknown(parser, example_parser):
     for key, default in example_parser.get_defaults().items():
         parser.add_argument("--" + key, default=default)

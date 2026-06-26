@@ -194,6 +194,9 @@ def parse_as_dict_patch():
 
             return cfg.as_dict() if self._parse_as_dict and not _skip_validation else cfg
 
+        patched_parse.__name__ = method_name
+        patched_parse.__qualname__ = f"ArgumentParser.{method_name}"
+
         setattr(ArgumentParser, unpatched_method_name, getattr(ArgumentParser, method_name))
         setattr(ArgumentParser, method_name, patched_parse)
 
@@ -749,6 +752,15 @@ class ParserDeprecations:
             instantiators = instantiators.copy()
             instantiators.update({k: v for k, v in parent_instantiators.items() if k not in instantiators})
         return instantiators
+
+    @deprecated("""
+        ``ArgumentParser.merge_config`` was deprecated in v4.50.0 and will be
+        removed in v5.0.0. There is no replacement since this is for internal use.
+    """)
+    def merge_config(self, cfg_from: Namespace, cfg_to: Namespace) -> Namespace:
+        from ._util import merge_config
+
+        return merge_config(self, cfg_from, cfg_to)
 
 
 def deprecated_skip_check(component, kwargs: dict, skip_validation: bool) -> bool:
