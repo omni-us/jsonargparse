@@ -112,7 +112,7 @@ def test_add_class_arguments(parser, subtests):
             assert "b2 help:" in help_str
 
     with subtests.test("add failures"):
-        with pytest.raises(ValueError, match="Expected 'theclass' parameter to be a class type"):
+        with pytest.raises(ValueError, match="Expected 'class_type' parameter to be a class type"):
             parser.add_class_arguments(1, "c")
         with pytest.raises(NSKeyError, match='No action for key "c.b2.b1" to set its default'):
             parser.add_class_arguments(DataClassB, "c", default=DataClassB(b2=DataClassB()))
