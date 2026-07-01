@@ -38,6 +38,8 @@ Changed
 ^^^^^^^
 - Drop support for Python 3.9. The minimum supported Python version is now
   3.10 (`#916 <https://github.com/omni-us/jsonargparse/pull/916>`__).
+- Renamed some parameters in the public API to improve consistency and clarity
+  (`#926 <https://github.com/omni-us/jsonargparse/pull/926>`__).
 
 Deprecated
 ^^^^^^^^^^

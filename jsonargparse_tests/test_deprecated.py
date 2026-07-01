@@ -71,6 +71,7 @@ from jsonargparse_tests.conftest import (
 from jsonargparse_tests.test_dataclasses import DataClassA
 from jsonargparse_tests.test_jsonnet import example_2_jsonnet
 from jsonargparse_tests.test_paths import paths  # noqa: F401
+from jsonargparse_tests.test_signatures import WithMethods
 from jsonargparse_tests.test_subclasses import CustomInstantiationBase, instantiator
 from jsonargparse_tests.test_subcommands import subcommands_parser  # noqa: F401
 
@@ -1252,4 +1253,91 @@ def test_deprecated_merge_config(parser):
         w,
         message="``ArgumentParser.merge_config`` was deprecated",
         code="cfg = parser.merge_config(cfg_from, cfg_to)",
+    )
+
+
+def test_add_class_arguments_class_type_rename(parser):
+    with catch_warnings(record=True) as w:
+        parser.add_class_arguments(theclass=ComposeA)
+    assert_deprecation_warn(
+        w,
+        message="Parameter 'theclass' was renamed to 'class_type'",
+        code="parser.add_class_arguments(theclass=ComposeA)",
+    )
+
+
+def test_add_method_arguments_class_type_rename(parser):
+    with catch_warnings(record=True) as w:
+        parser.add_method_arguments(theclass=WithMethods, themethod="normal_method")
+    assert_deprecation_warn(
+        w,
+        message="Parameter 'theclass' was renamed to 'class_type'",
+        code='parser.add_method_arguments(theclass=WithMethods, themethod="normal_method")',
+    )
+
+
+def test_add_method_arguments_method_name_rename(parser):
+    with catch_warnings(record=True) as w:
+        parser.add_method_arguments(WithMethods, themethod="normal_method")
+    assert_deprecation_warn(
+        w,
+        message="Parameter 'themethod' was renamed to 'method_name'",
+        code='parser.add_method_arguments(WithMethods, themethod="normal_method")',
+    )
+
+
+def test_parse_object_obj_rename(parser):
+    parser.add_argument("--p1", type=float)
+    with catch_warnings(record=True) as w:
+        assert parser.parse_object(cfg_obj={"p1": 1.2}) == Namespace(p1=1.2)
+    assert_deprecation_warn(
+        w,
+        message="Parameter 'cfg_obj' was renamed to 'obj'",
+        code='parser.parse_object(cfg_obj={"p1": 1.2})',
+    )
+
+
+def test_parse_object_namespace_rename(parser):
+    parser.add_argument("--p1", type=float)
+    parser.add_argument("--p2", type=int)
+    with catch_warnings(record=True) as w:
+        assert parser.parse_object({"p1": 2.1}, cfg_base=Namespace(p2=3)) == Namespace(p1=2.1, p2=3)
+    assert_deprecation_warn(
+        w,
+        message="Parameter 'cfg_base' was renamed to 'namespace'",
+        code='parser.parse_object({"p1": 2.1}, cfg_base=Namespace(p2=3))',
+    )
+
+
+def test_parse_path_path_rename(parser, tmp_cwd):
+    parser.add_argument("--p1", type=float)
+    pathlib.Path("cfg.json").write_text('{"p1": 2.1}')
+    with catch_warnings(record=True) as w:
+        assert parser.parse_path(cfg_path="cfg.json") == Namespace(p1=2.1)
+    assert_deprecation_warn(
+        w,
+        message="Parameter 'cfg_path' was renamed to 'path'",
+        code='parser.parse_path(cfg_path="cfg.json")',
+    )
+
+
+def test_parse_string_content_rename(parser):
+    parser.add_argument("--p1", type=float)
+    with catch_warnings(record=True) as w:
+        assert parser.parse_string(cfg_str='{"p1": 2.1}') == Namespace(p1=2.1)
+    assert_deprecation_warn(
+        w,
+        message="Parameter 'cfg_str' was renamed to 'content'",
+        code="parser.parse_string(cfg_str='{\"p1\": 2.1}')",
+    )
+
+
+def test_parse_string_path_rename(parser):
+    parser.add_argument("--p1", type=float)
+    with catch_warnings(record=True) as w:
+        assert parser.parse_string(content='{"p1": 2.1}', cfg_path="cfg.yaml") == Namespace(p1=2.1)
+    assert_deprecation_warn(
+        w,
+        message="Parameter 'cfg_path' was renamed to 'path'",
+        code='parser.parse_string(content=\'{"p1": 2.1}\', cfg_path="cfg.yaml")',
     )

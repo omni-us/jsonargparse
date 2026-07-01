@@ -1123,8 +1123,8 @@ def adapt_typehints(
         if (isinstance(prev_val, (dict, Namespace)) and prev_val["class_path"] is None) or (
             isinstance(val, NestedArg) and is_subclasses_disabled(typehint)
         ):
-            type_class_path = Namespace(class_path=get_import_path(typehint))
-            val = subclass_spec_as_namespace(val, type_class_path)
+            class_type_path = Namespace(class_path=get_import_path(typehint))
+            val = subclass_spec_as_namespace(val, class_type_path)
         else:
             val = subclass_spec_as_namespace(val, prev_val)
         if val and not is_subclass_spec(val) and "init_args" not in val:
@@ -1590,7 +1590,7 @@ def adapt_class_type(
         elif dict_kwargs:
             init_args["dict_kwargs"] = dict_kwargs
             dict_kwargs = None
-        init_args = parser.parse_object(init_args, cfg_base=prev_init_args, defaults=sub_defaults.get())
+        init_args = parser.parse_object(init_args, namespace=prev_init_args, defaults=sub_defaults.get())
         if init_args:
             value["init_args"] = init_args
     if dict_kwargs:

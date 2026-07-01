@@ -17,6 +17,7 @@ from ._common import (
     is_subclass,
     is_subclasses_disabled,
 )
+from ._deprecated import renamed_parameter_warning
 from ._instantiation import get_class_instantiator
 from ._namespace import Namespace, get_value_and_parent
 from ._optionals import attrs_support, get_doc_short_description, is_attrs_class, is_pydantic_model
@@ -41,9 +42,10 @@ inspect_empty = inspect._empty
 class SignatureArguments(LoggerProperty):
     """Methods to add arguments based on signatures to an :class:`ArgumentParser` instance."""
 
+    @renamed_parameter_warning({"theclass": "class_type"})
     def add_class_arguments(
         self,
-        theclass: type,
+        class_type: type,
         nested_key: str | None = None,
         as_group: bool = True,
         as_positional: bool = False,
@@ -59,7 +61,7 @@ class SignatureArguments(LoggerProperty):
         Note: Keyword arguments without at least one valid type are ignored.
 
         Args:
-            theclass: Class from which to add arguments.
+            class_type: Class from which to add arguments.
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
@@ -77,9 +79,9 @@ class SignatureArguments(LoggerProperty):
             ValueError: When not given a class.
             ValueError: When there are required parameters without at least one valid type.
         """
-        unaliased_class_type = get_unaliased_type(theclass)
+        unaliased_class_type = get_unaliased_type(class_type)
         if not inspect.isclass(get_generic_origin(unaliased_class_type)):
-            raise ValueError(f"Expected 'theclass' parameter to be a class type, got: {theclass}")
+            raise ValueError(f"Expected 'class_type' parameter to be a class type, got: {class_type}")
         if not (
             isinstance(default, (NoneType, dict, Namespace))
             or (isinstance(default, _LazyInitBaseClass) and isinstance(default, unaliased_class_type))
@@ -100,7 +102,7 @@ class SignatureArguments(LoggerProperty):
         )
 
         added_args = self._add_signature_arguments(
-            theclass,
+            class_type,
             None,
             nested_key,
             as_group,
@@ -131,10 +133,11 @@ class SignatureArguments(LoggerProperty):
 
         return added_args
 
+    @renamed_parameter_warning({"theclass": "class_type", "themethod": "method_name"})
     def add_method_arguments(
         self,
-        theclass: type,
-        themethod: str,
+        class_type: type,
+        method_name: str,
         nested_key: str | None = None,
         as_group: bool = True,
         as_positional: bool = False,
@@ -147,8 +150,8 @@ class SignatureArguments(LoggerProperty):
         Note: Keyword arguments without at least one valid type are ignored.
 
         Args:
-            theclass: Class which includes the method.
-            themethod: Name of the method for which to add arguments.
+            class_type: Class which includes the method.
+            method_name: Name of the method for which to add arguments.
             nested_key: Key for nested namespace.
             as_group: Whether arguments should be added to a new argument group.
             as_positional: Whether to add required parameters as positional arguments.
@@ -163,15 +166,15 @@ class SignatureArguments(LoggerProperty):
             ValueError: When not given a class or the name of a method of the class.
             ValueError: When there are required parameters without at least one valid type.
         """
-        unaliased_type = get_unaliased_type(theclass)
+        unaliased_type = get_unaliased_type(class_type)
         if not inspect.isclass(get_generic_origin(unaliased_type)):
-            raise ValueError('Expected "theclass" argument to be a class object.')
-        if not hasattr(unaliased_type, themethod) or not callable(getattr(unaliased_type, themethod)):
-            raise ValueError('Expected "themethod" argument to be a callable member of the class.')
+            raise ValueError('Expected "class_type" argument to be a class object.')
+        if not hasattr(unaliased_type, method_name) or not callable(getattr(unaliased_type, method_name)):
+            raise ValueError('Expected "method_name" argument to be a callable member of the class.')
 
         return self._add_signature_arguments(
-            theclass,
-            themethod,
+            class_type,
+            method_name,
             nested_key,
             as_group,
             as_positional,

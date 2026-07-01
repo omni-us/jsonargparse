@@ -763,7 +763,7 @@ class ParserDeprecations:
         return merge_config(self, cfg_from, cfg_to)
 
 
-def deprecated_skip_check(component, kwargs: dict, skip_validation: bool) -> bool:
+def deprecated_skip_check(component, kwargs: dict, skip_validation: bool, stacklevel: int = 3) -> bool:
     skip_check = kwargs.pop("skip_check", None)
     if skip_check is not None:
         skip_validation = skip_check
@@ -773,7 +773,7 @@ def deprecated_skip_check(component, kwargs: dict, skip_validation: bool) -> boo
                 "skip_check parameter was deprecated in v4.35.0 and will be removed in "
                 "v5.0.0. Instead use skip_validation."
             ),
-            stacklevel=3,
+            stacklevel=stacklevel,
         )
     return skip_validation
 
@@ -806,7 +806,7 @@ def deprecated_skip_null(flag: str) -> bool:
     return False
 
 
-def deprecated_yaml_comments(kwargs: dict, with_comments: bool) -> bool:
+def deprecated_yaml_comments(kwargs: dict, with_comments: bool, stacklevel: int = 3) -> bool:
     yaml_comments = kwargs.pop("yaml_comments", None)
     if yaml_comments is not None:
         deprecation_warning(
@@ -815,7 +815,7 @@ def deprecated_yaml_comments(kwargs: dict, with_comments: bool) -> bool:
                 "yaml_comments parameter was deprecated in v4.44.0 and will be removed in "
                 "v5.0.0. Instead use with_comments."
             ),
-            stacklevel=3,
+            stacklevel=stacklevel,
         )
         return yaml_comments
     return with_comments
@@ -1056,6 +1056,7 @@ def compose_dataclasses(*args):
 
 
 def deprecated_implicit_subcommand(component, subcommand_keys: list[str], subcommand: str, dest: str):
+    stack = inspect.stack()
     deprecation_warning(
         component,
         (
@@ -1063,5 +1064,29 @@ def deprecated_implicit_subcommand(component, subcommand_keys: list[str], subcom
             f"explicit '{dest}' key. Subcommand '{subcommand}' will be used. From v5.0.0 "
             "providing an explicit subcommand will be required."
         ),
-        stacklevel=6,
+        stacklevel=7 if Path(stack[6].filename).name == "_deprecated.py" else 6,
     )
+
+
+def renamed_parameter_warning(renames: dict[str, str], stacklevel: int = 1):
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for old_name, new_name in renames.items():
+                if old_name in kwargs:
+                    deprecation_warning(
+                        func,
+                        (
+                            f"Parameter '{old_name}' was renamed to '{new_name}' in v4.50.0. "
+                            "The old name will stop working in v5.0.0."
+                        ),
+                        stacklevel=stacklevel,
+                    )
+                    if new_name not in kwargs:
+                        kwargs[new_name] = kwargs.pop(old_name)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator

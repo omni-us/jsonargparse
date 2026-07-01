@@ -20,7 +20,7 @@ _global_class_instantiators: InstantiatorsDictType = {}
 class InstantiateMethod:
     def instantiate(
         self,
-        cfg: Namespace,
+        namespace: Namespace,
         instantiate_groups: bool = True,
     ) -> Namespace:
         """Instantiates all signature components in a configuration namespace.
@@ -49,8 +49,8 @@ class InstantiateMethod:
           determined by argument links applied on instantiation.
 
         Args:
-            cfg: The configuration object to use. Must have been produced by
-                one of the ``parse_*`` methods and not modified in a way that
+            namespace: The configuration object to use. Must have been produced
+                by one of the ``parse_*`` methods and not modified in a way that
                 breaks the structure expected by the parser.
             instantiate_groups: Whether class groups should be instantiated.
 
@@ -84,7 +84,7 @@ class InstantiateMethod:
         order = ActionLink.instantiation_order(self)
         components = ActionLink.reorder(order, components)
 
-        cfg = cfg.clone(with_meta=False)
+        cfg = namespace.clone(with_meta=False)
         unset_sentinel = get_parsing_setting("unset_sentinel")
         for component in components:
             ActionLink.apply_instantiation_links(self, cfg, target=component.dest)

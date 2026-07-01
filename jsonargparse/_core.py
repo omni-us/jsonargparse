@@ -36,7 +36,13 @@ from ._completions import get_argcomplete_namespace, handle_completions
 from ._completions import (
     get_completion_script as get_completion_script_internal,
 )
-from ._deprecated import ParserDeprecations, deprecated_skip_check, deprecated_skip_none, deprecated_yaml_comments
+from ._deprecated import (
+    ParserDeprecations,
+    deprecated_skip_check,
+    deprecated_skip_none,
+    deprecated_yaml_comments,
+    renamed_parameter_warning,
+)
 from ._formatters import DefaultHelpFormatter, get_env_var
 from ._instantiation import InstantiateMethod
 from ._jsonnet import ActionJsonnet
@@ -485,10 +491,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         self._logger.debug("Parsed command line arguments: %s", args)
         return parsed_cfg
 
+    @renamed_parameter_warning({"cfg_obj": "obj", "cfg_base": "namespace"}, stacklevel=2)
     def parse_object(
         self,
-        cfg_obj: Namespace | dict[str, Any],
-        cfg_base: Namespace | None = None,
+        obj: Namespace | dict[str, Any],
+        namespace: Namespace | None = None,
         env: bool | None = None,
         defaults: bool = True,
         **kwargs,
@@ -496,7 +503,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         """Parses configuration given as an object.
 
         Args:
-            cfg_obj: The configuration object.
+            obj: The configuration object.
             env: Whether to merge with the parsed environment, ``None`` to use the parser's default.
             defaults: Whether to merge with the parser's defaults.
 
@@ -510,11 +517,11 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
         try:
             cfg = self._parse_defaults_and_environ(defaults, env)
-            if cfg_base:
-                cfg = merge_config(self, cfg_base, cfg)
+            if namespace:
+                cfg = merge_config(self, namespace, cfg)
 
             cfg = self._apply_actions(cfg)
-            cfg_apply = self._apply_actions(cfg_obj, prev_cfg=cfg)
+            cfg_apply = self._apply_actions(obj, prev_cfg=cfg)
             cfg = merge_config(self, cfg_apply, cfg)
 
             parsed_cfg = self._parse_common(
@@ -528,7 +535,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         except (TypeError, KeyError) as ex:
             self.error(str(ex), ex)
 
-        self._logger.debug("Parsed object: %s", cfg_obj)
+        self._logger.debug("Parsed object: %s", obj)
         return parsed_cfg
 
     def _load_env_vars(self, env: dict[str, str] | os._Environ, defaults: bool) -> Namespace:
@@ -611,9 +618,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         self._logger.debug("Parsed environment variables")
         return parsed_cfg
 
+    @renamed_parameter_warning({"cfg_path": "path"}, stacklevel=1)
     def parse_path(
         self,
-        cfg_path: str | os.PathLike,
+        path: str | os.PathLike,
         ext_vars: dict | None = None,
         env: bool | None = None,
         defaults: bool = True,
@@ -622,7 +630,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         """Parses a configuration file given its path.
 
         Args:
-            cfg_path: Path to the configuration file to parse.
+            path: Path to the configuration file to parse.
             ext_vars: Optional external variables used for parsing jsonnet.
             env: Whether to merge with the parsed environment, ``None`` to use the parser's default.
             defaults: Whether to merge with the parser's defaults.
@@ -633,25 +641,26 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         Raises:
             ArgumentError: If the parsing fails and ``exit_on_error=False``.
         """
-        fpath = Path(cfg_path, mode=_get_config_read_mode())
+        fpath = Path(path, mode=_get_config_read_mode())
         with load_config_path_context(fpath), change_to_path_dir(fpath):
-            cfg_str = fpath.read_text()
+            content = fpath.read_text()
             parsed_cfg = self.parse_string(
-                cfg_str=cfg_str,
-                cfg_path=os.path.basename(cfg_path),
+                content=content,
+                path=os.path.basename(path),
                 ext_vars=ext_vars,
                 env=env,
                 defaults=defaults,
                 **kwargs,
             )
 
-        self._logger.debug("Parsed configuration from path: %s", cfg_path)
+        self._logger.debug("Parsed configuration from path: %s", path)
         return parsed_cfg
 
+    @renamed_parameter_warning({"cfg_str": "content", "cfg_path": "path"}, stacklevel=2)
     def parse_string(
         self,
-        cfg_str: str,
-        cfg_path: str | os.PathLike = "",
+        content: str,
+        path: str | os.PathLike = "",
         ext_vars: dict | None = None,
         env: bool | None = None,
         defaults: bool = True,
@@ -660,8 +669,8 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         """Parses configuration given as a string.
 
         Args:
-            cfg_str: The configuration content.
-            cfg_path: Optional path to original config path, just for error printing.
+            content: The configuration content.
+            path: Optional path to original config path, just for error printing.
             ext_vars: Optional external variables used for parsing jsonnet.
             env: Whether to merge with the parsed environment, ``None`` to use the parser's default.
             defaults: Whether to merge with the parser's defaults.
@@ -678,7 +687,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
         try:
             with parser_context(load_value_mode=self.parser_mode):
-                cfg = self._load_config_parser_mode(cfg_str, cfg_path, ext_vars, previous_config.get())
+                cfg = self._load_config_parser_mode(content, path, ext_vars, previous_config.get())
 
             if defaults or env:
                 cfg_base = self._parse_defaults_and_environ(defaults, env)
@@ -695,32 +704,32 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         except (TypeError, KeyError) as ex:
             self.error(str(ex), ex)
 
-        self._logger.debug("Parsed %s string: %s", self.parser_mode, cfg_str)
+        self._logger.debug("Parsed %s string: %s", self.parser_mode, content)
         return parsed_cfg
 
     def _load_config_parser_mode(
         self,
-        cfg_str: str,
-        cfg_path: str | os.PathLike = "",
+        content: str,
+        path: str | os.PathLike = "",
         ext_vars: dict | None = None,
         prev_cfg: Namespace | None = None,
     ) -> Namespace:
         """Loads a configuration string into a namespace.
 
         Args:
-            cfg_str: The configuration content.
-            cfg_path: Optional path to original config path, just for error printing.
+            content: The configuration content.
+            path: Optional path to original config path, just for error printing.
             ext_vars: Optional external variables used for parsing jsonnet.
 
         Raises:
             TypeError: If there is an invalid value according to the parser.
         """
         try:
-            cfg_dict = load_value(cfg_str, path=cfg_path, ext_vars=ext_vars)
+            cfg_dict = load_value(content, path=path, ext_vars=ext_vars)
         except get_loader_exceptions() as ex:
             raise TypeError(f"Problems parsing config: {ex}") from ex
         if not isinstance(cfg_dict, dict):
-            raise TypeError(f"Unexpected config: {cfg_str}")
+            raise TypeError(f"Unexpected config: {content}")
         return self._apply_actions(cfg_dict, prev_cfg=prev_cfg)
 
     ## Methods for adding to the parser ##
@@ -763,9 +772,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
     ## Methods for serializing config objects ##
 
+    @renamed_parameter_warning({"cfg": "namespace"}, stacklevel=2)
     def dump(
         self,
-        cfg: Namespace,
+        namespace: Namespace,
         format: str = "parser_mode",
         skip_unset: bool = True,
         skip_default: bool = False,
@@ -777,7 +787,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         """Generates a serialized string for the given configuration object.
 
         Args:
-            cfg: The configuration object to dump.
+            namespace: The configuration object to dump.
             format: The output format: ``yaml``, ``json``, ``json_indented``, ``toml``, ``parser_mode`` or ones added
                 via :func:`.set_dumper`.
             skip_unset: Whether to exclude entries whose value is the configured None/Unset value.
@@ -790,17 +800,17 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             The configuration in the chosen format.
 
         Raises:
-            TypeError: If any of the values of cfg is invalid according to the parser.
+            TypeError: If any of the values of namespace is invalid according to the parser.
         """
-        with_comments = deprecated_yaml_comments(kwargs, with_comments)
-        skip_validation = deprecated_skip_check(ArgumentParser.dump, kwargs, skip_validation)
-        skip_unset = deprecated_skip_none(ArgumentParser.dump, kwargs, skip_unset)
+        with_comments = deprecated_yaml_comments(kwargs, with_comments, stacklevel=4)
+        skip_validation = deprecated_skip_check(ArgumentParser.dump, kwargs, skip_validation, stacklevel=4)
+        skip_unset = deprecated_skip_none(ArgumentParser.dump, kwargs, skip_unset, stacklevel=4)
         if kwargs:
             raise ValueError(f"Unexpected keyword parameters: {set(kwargs)}")
 
         check_valid_dump_format(format)
 
-        cfg = cfg.clone(with_meta=False)
+        cfg = namespace.clone(with_meta=False)
 
         with parser_context(load_value_mode=self.parser_mode):
             if not skip_validation:
@@ -873,9 +883,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                     if class_object_val and class_object_val.get("init_args") == {}:
                         del class_object_val["init_args"]
 
+    @renamed_parameter_warning({"cfg": "namespace"}, stacklevel=2)
     def save(
         self,
-        cfg: Namespace,
+        namespace: Namespace,
         path: str | os.PathLike,
         format: str = "parser_mode",
         skip_unset: bool = True,
@@ -888,7 +899,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         """Writes to file(s) the given configuration object using the chosen format.
 
         Args:
-            cfg: The configuration object to save.
+            namespace: The configuration object to save.
             path: Path to the location where to save config.
             format: The output format: ``yaml``, ``json``, ``json_indented``, ``parser_mode`` or ones added via
                 :func:`.set_dumper`.
@@ -898,10 +909,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             multifile: Whether to save multiple config files by using the ``__path__`` metas.
 
         Raises:
-            TypeError: If any of the values of cfg is invalid according to the parser.
+            TypeError: If any of the values of namespace is invalid according to the parser.
         """
-        skip_validation = deprecated_skip_check(ArgumentParser.save, kwargs, skip_validation)
-        skip_unset = deprecated_skip_none(ArgumentParser.save, kwargs, skip_unset)
+        skip_validation = deprecated_skip_check(ArgumentParser.save, kwargs, skip_validation, stacklevel=4)
+        skip_unset = deprecated_skip_none(ArgumentParser.save, kwargs, skip_unset, stacklevel=4)
         if kwargs:
             raise ValueError(f"Unexpected keyword parameters: {set(kwargs)}")
         check_valid_dump_format(format)
@@ -923,7 +934,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                         raise NotImplementedError(f"multifile=True not supported for fsspec paths: {path}")
                     fsspec = import_fsspec("ArgumentParser.save")
                     with fsspec.open(path, "w") as f:
-                        f.write(self.dump(cfg, **dump_kwargs))  # type: ignore[arg-type]
+                        f.write(self.dump(namespace, **dump_kwargs))
                     return
 
         path_fc = Path(path, mode="fc")
@@ -931,10 +942,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
         if not multifile:
             with open(path_fc.absolute, "w") as f:
-                f.write(self.dump(cfg, **dump_kwargs))  # type: ignore[arg-type]
+                f.write(self.dump(namespace, **dump_kwargs))
 
         else:
-            cfg = cfg.clone()
+            cfg = namespace.clone()
 
             if not skip_validation:
                 with parser_context(load_value_mode=self.parser_mode):
@@ -983,7 +994,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
                 save_paths(cfg)
             dump_kwargs["skip_validation"] = True
             with open(path_fc.absolute, "w") as f:
-                f.write(self.dump(cfg, **dump_kwargs))  # type: ignore[arg-type]
+                f.write(self.dump(cfg, **dump_kwargs))
 
     ## Methods related to defaults ##
 
@@ -1142,9 +1153,10 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         sys.stderr.write(f"error: {message}\n")
         self.exit(2)
 
+    @renamed_parameter_warning({"cfg": "namespace"}, stacklevel=2)
     def validate(
         self,
-        cfg: Namespace,
+        namespace: Namespace,
         skip_unset: bool = True,
         skip_required: bool = False,
         branch: str | None = None,
@@ -1153,7 +1165,7 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         """Checks that the content of a given configuration object conforms with the parser.
 
         Args:
-            cfg: The configuration object to check.
+            namespace: The configuration object to check.
             skip_unset: Whether to skip checking of values that are the configured None/Unset value.
             skip_required: Whether to skip checking required arguments.
             branch: Base key in case cfg corresponds only to a branch.
@@ -1162,9 +1174,9 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
             TypeError: If any of the values are not valid.
             KeyError: If a key in cfg is not defined in the parser.
         """
-        skip_unset = deprecated_skip_none(ArgumentParser.validate, kwargs, skip_unset, stacklevel=2)
+        skip_unset = deprecated_skip_none(ArgumentParser.validate, kwargs, skip_unset, stacklevel=3)
         prefix = get_private_kwargs(kwargs, _prefix="")
-        cfg = ccfg = cfg.clone()
+        cfg = ccfg = namespace.clone()
         if isinstance(branch, str):
             branch_cfg = cfg
             cfg = Namespace()
@@ -1231,18 +1243,19 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
         if not skip_required and not lenient_check.get():
             check_required(cfg, self, prefix)
 
-    instantiate = InstantiateMethod.instantiate
+    instantiate = renamed_parameter_warning({"cfg": "namespace"}, stacklevel=2)(InstantiateMethod.instantiate)
 
-    def strip_unknown(self, cfg: Namespace) -> Namespace:
+    @renamed_parameter_warning({"cfg": "namespace"}, stacklevel=2)
+    def strip_unknown(self, namespace: Namespace) -> Namespace:
         """Removes all unknown keys from a configuration object.
 
         Args:
-            cfg: The configuration object to strip.
+            namespace: The configuration object to strip.
 
         Returns:
             The stripped configuration object.
         """
-        cfg = cfg.clone()
+        cfg = namespace.clone()
 
         del_keys = []
         for key in cfg.keys():
@@ -1254,22 +1267,27 @@ class ArgumentParser(ParserDeprecations, ActionsContainer, argparse.ArgumentPars
 
         return cfg
 
-    def get_config_files(self, cfg: Namespace) -> list[str]:
+    @renamed_parameter_warning({"cfg": "namespace"}, stacklevel=2)
+    def get_config_files(self, namespace: Namespace) -> list[str]:
         """Returns a list of loaded config file paths.
 
         Args:
-            cfg: The configuration object.
+            namespace: The configuration object.
 
         Returns:
             Paths to loaded config files.
         """
         cfg_files = []
-        if "__default_config__" in cfg:
-            cfg_files.append(cfg["__default_config__"])
+        if "__default_config__" in namespace:
+            cfg_files.append(namespace["__default_config__"])
         unset_sentinel = get_parsing_setting("unset_sentinel")
         for action in filter_non_parsing_actions(self._actions):
-            if isinstance(action, ActionConfigFile) and action.dest in cfg and cfg[action.dest] is not unset_sentinel:
-                cfg_files.extend(p for p in cfg[action.dest] if p is not None)
+            if (
+                isinstance(action, ActionConfigFile)
+                and action.dest in namespace
+                and namespace[action.dest] is not unset_sentinel
+            ):
+                cfg_files.extend(p for p in namespace[action.dest] if p is not None)
         return cfg_files
 
     def format_help(self) -> str:

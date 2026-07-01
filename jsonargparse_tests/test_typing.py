@@ -342,9 +342,9 @@ def test_range_deserialize_failure():
 # other tests
 
 
-@pytest.mark.parametrize("type_class", registered_types.values())
-def test_pickle_module_type(type_class):
-    assert type_class == pickle.loads(pickle.dumps(type_class))
+@pytest.mark.parametrize("class_type", registered_types.values())
+def test_pickle_module_type(class_type):
+    assert class_type == pickle.loads(pickle.dumps(class_type))
 
 
 def test_module_name_clash():
@@ -391,7 +391,7 @@ def test_register_not_a_class_type_failure():
     class SomeClass:
         pass
 
-    with pytest.raises(ValueError, match="Expected type_class to be a class"):
+    with pytest.raises(ValueError, match="Expected class_type to be a class"):
         register_type(Union[SomeClass, int])
 
 
@@ -403,7 +403,7 @@ def test_register_type_on_first_use():
     register_type_on_first_use(f"{__name__}.RegisterOnFirstUse")
     assert f"{__name__}.RegisterOnFirstUse" in registration_pending
     registered = get_registered_type(RegisterOnFirstUse)
-    assert registered.type_class is RegisterOnFirstUse
+    assert registered.class_type is RegisterOnFirstUse
     assert f"{__name__}.RegisterOnFirstUse" not in registration_pending
 
 

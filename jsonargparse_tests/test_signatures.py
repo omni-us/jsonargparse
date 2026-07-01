@@ -84,7 +84,7 @@ class Class3(Class2):
 def test_add_class_failure_not_a_class(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_class_arguments("Not a class")
-    ctx.match("Expected 'theclass' parameter to be a class")
+    ctx.match("Expected 'class_type' parameter to be a class")
 
 
 def test_add_class_failure_positional_without_type(parser):
@@ -493,10 +493,10 @@ class WithMethods:
 def test_add_method_failure_adding(parser):
     with pytest.raises(ValueError) as ctx:
         parser.add_method_arguments("WithMethods", "normal_method")
-    ctx.match('Expected "theclass" argument to be a class')
+    ctx.match('Expected "class_type" argument to be a class')
     with pytest.raises(ValueError) as ctx:
         parser.add_method_arguments(WithMethods, "does_not_exist")
-    ctx.match('Expected "themethod" argument to be a callable member')
+    ctx.match('Expected "method_name" argument to be a callable member')
 
 
 def test_add_method_normal_and_static(parser):

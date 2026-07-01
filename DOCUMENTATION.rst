@@ -1178,7 +1178,7 @@ integers could be done as:
 
     from jsonargparse.typing import extend_base_type
 
-    def is_even(type_class, value):
+    def is_even(class_type, value):
         if int(value) % 2 != 0:
             raise ValueError(f"{value} is not even")
 
